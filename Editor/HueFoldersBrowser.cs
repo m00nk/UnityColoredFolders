@@ -16,7 +16,7 @@ namespace HueFolders {
 				return;
 
 			var path = AssetDatabase.GUIDToAssetPath(guid);
-			if (isValidFolder(path))
+			if (isNotValidFolder(path))
 				return;
 
 			// get base color of folder, configure rect
@@ -51,11 +51,13 @@ namespace HueFolders {
 			GUI.color = Color.white;
 
 			// =======================================================================
-			bool isValidFolder(string path) { return AssetDatabase.IsValidFolder(path) == false || path.StartsWith("Packages") || path.Equals("Assets"); }
+			bool isNotValidFolder(string folderPath) {
+				return AssetDatabase.IsValidFolder(folderPath) == false || folderPath.StartsWith("Packages") || folderPath.Equals("Assets");
+			}
 
 			SettingsProvider.FolderData getFolderData(out bool isSubFolder) {
 				isSubFolder = false;
-				if (SettingsProvider.sFoldersDataDic.TryGetValue(guid, out var folderData))
+				if (SettingsProvider.specificFoldersDataDic.TryGetValue(guid, out var folderData))
 					return folderData;
 
 				isSubFolder = true;
@@ -67,7 +69,7 @@ namespace HueFolders {
 
 					var searchGuid = AssetDatabase.GUIDFromAssetPath(searchPath).ToString();
 
-					SettingsProvider.sFoldersDataDic.TryGetValue(searchGuid, out folderData);
+					SettingsProvider.specificFoldersDataDic.TryGetValue(searchGuid, out folderData);
 					if (folderData != null && folderData.recursive == false)
 						return null;
 				}
