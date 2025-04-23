@@ -180,7 +180,7 @@ namespace HueFolders
         [SettingsProvider]
         public static UnityEditor.SettingsProvider CreateSettingsProvider()
         {
-            var provider = new SettingsProvider("Preferences/Hue Folders", SettingsScope.User);
+            var provider = new SettingsProvider("Preferences/Colored Folders", SettingsScope.User);
             return provider;
         }
         
