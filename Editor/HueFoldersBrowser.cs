@@ -1,39 +1,50 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace HueFolders {
+namespace ColoredFolders {
 	public static class HueFoldersBrowser {
 		private static GUIStyle _sLabelNormal;
 		private static GUIStyle _sLabelSelected;
 
+		private static int _cnt = 0;
+
 		// =======================================================================
 		public static void folderColorization(string guid, Rect rect) {
-			if (SettingsProvider.sInTreeViewOnly.get<bool>() && isTreeView() == false)
+			if (SettingsProvider.sInTreeViewOnly.get<bool>() && isTreeView() == false) {
 				return;
+			}
+
+			if (rect.width < rect.height) {
+				return;
+			}
+
+			_cnt++;
+			Debug.Log($"Cnt: {_cnt}");
 
 			var path = AssetDatabase.GUIDToAssetPath(guid);
 			if (isNotValidFolder(path))
 				return;
 
 			// get base color of folder, configure rect
-			var data = getFolderData(out var isSubFolder);
-			var baseColor = data == null ? SettingsProvider.sFoldersDefaultTint : data.color;
-			if (baseColor.a <= 0f)
-				return;
+			var data = getFolderData(out var isSubfolder);
 
-			var folderColor = baseColor * SettingsProvider.sFoldersTint.get<Color>();
-			if (isSubFolder) {
-				var tint = SettingsProvider.sSubFoldersTint.get<Color>();
-				folderColor *= tint;
+			Color baseColor = SettingsProvider.sFoldersDefaultTint;
+			Color folderColor = baseColor * SettingsProvider.sFoldersTint.get<Color>();
+
+			if (data != null) {
+				baseColor = data.color;
+				if (baseColor.a <= 0f)
+					return;
+
+				folderColor = baseColor * SettingsProvider.sFoldersTint.get<Color>();
+				if (isSubfolder) {
+					var tint = SettingsProvider.sSubFoldersTint.get<Color>();
+					folderColor *= tint;
+				}
 			}
-
-			var isSmall = rect.width > rect.height;
-			if (isSmall == false)
-				return;
 
 			if (isTreeView() == false)
 				rect.xMin += 3;
@@ -57,24 +68,32 @@ namespace HueFolders {
 
 			SettingsProvider.FolderData getFolderData(out bool isSubFolder) {
 				isSubFolder = false;
-				if (SettingsProvider.specificFoldersDataDic.TryGetValue(guid, out var folderData))
-					return folderData;
 
-				isSubFolder = true;
-				var searchPath = path;
-				while (folderData == null) {
-					searchPath = Path.GetDirectoryName(searchPath);
-					if (string.IsNullOrEmpty(searchPath))
-						return null;
-
-					var searchGuid = AssetDatabase.GUIDFromAssetPath(searchPath).ToString();
-
-					SettingsProvider.specificFoldersDataDic.TryGetValue(searchGuid, out folderData);
-					if (folderData != null && folderData.recursive == false)
-						return null;
+				foreach (var item in SettingsProvider.folderNamesDic) {
+					var fileName = Path.GetFileName(path);
+					if (fileName != null && fileName == item.Key) {
+						return item.Value;
+					}
 				}
 
-				return folderData;
+				isSubFolder = true;
+
+				string foundSubPath = "";
+				SettingsProvider.FolderData folderData = null;
+
+				foreach (var item in SettingsProvider.folderNamesDic) {
+					string f = '/' + item.Key + '/';
+					if (path.Contains(f)) {
+						string subPath = path.Substring(0, path.LastIndexOf(f, StringComparison.Ordinal));
+
+						if (foundSubPath.Length < subPath.Length) {
+							foundSubPath = subPath;
+							folderData = item.Value;
+						}
+					}
+				}
+
+				return string.IsNullOrEmpty(foundSubPath) ? null : folderData;
 			}
 
 			Rect iconRect() {
