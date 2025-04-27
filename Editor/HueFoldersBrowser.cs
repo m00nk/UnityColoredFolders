@@ -9,8 +9,6 @@ namespace ColoredFolders {
 		private static GUIStyle _sLabelNormal;
 		private static GUIStyle _sLabelSelected;
 
-		private static int _cnt = 0;
-
 		// =======================================================================
 		public static void folderColorization(string guid, Rect rect) {
 			if (SettingsProvider.sInTreeViewOnly.get<bool>() && isTreeView() == false) {
@@ -20,9 +18,6 @@ namespace ColoredFolders {
 			if (rect.width < rect.height) {
 				return;
 			}
-
-			_cnt++;
-			Debug.Log($"Cnt: {_cnt}");
 
 			var path = AssetDatabase.GUIDToAssetPath(guid);
 			if (isNotValidFolder(path))
